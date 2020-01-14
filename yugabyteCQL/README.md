@@ -98,6 +98,7 @@ bin/ycsb run yugabyteCQL -P yugabyteCQL/db.properties -P workloads/workloada
 * `cassandra.maxconnections`
 * `cassandra.coreconnections`
   * Defaults for max and core connections can be found here: https://datastax.github.io/java-driver/2.1.8/features/pooling/#pool-size. Cassandra 2.0.X falls under protocol V2, Cassandra 2.1+ falls under protocol V3.
+  A lower value for these cause a bottleneck with the network thread and hence we would prefer a higher value for these.
 * `cassandra.connecttimeoutmillis`
 * `cassandra.useSSL`
   * Default value is false.
