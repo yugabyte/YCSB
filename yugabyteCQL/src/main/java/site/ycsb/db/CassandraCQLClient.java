@@ -17,17 +17,7 @@
  */
 package site.ycsb.db;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ColumnDefinitions;
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.HostDistance;
-import com.datastax.driver.core.Metadata;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
@@ -110,6 +100,10 @@ public class CassandraCQLClient extends DB {
       "cassandra.connecttimeoutmillis";
   public static final String READ_TIMEOUT_MILLIS_PROPERTY =
       "cassandra.readtimeoutmillis";
+  public static final String BATCH_SIZE = "cassandra.batchsize";
+  public static final String BATCH_UPDATES = "cassandra.batchupdate";
+  public static final String BATCH_SIZE_DEFAULT = "100";
+  public static final String BATCH_UPDATES_DEFAULT = "true";
 
   public static final String TRACING_PROPERTY = "cassandra.tracing";
   public static final String TRACING_PROPERTY_DEFAULT = "false";
@@ -126,6 +120,10 @@ public class CassandraCQLClient extends DB {
   private static boolean debug = false;
 
   private static boolean trace = false;
+  private int batchSize;
+  private boolean batchUpdates;
+  private long numRowsInBatch = 0;
+  private BatchStatement batch = new BatchStatement();
 
   /**
    * Initialize any state for this DB. Called once per DB instance; there is one
@@ -173,7 +171,9 @@ public class CassandraCQLClient extends DB {
         writeConsistencyLevel = ConsistencyLevel.valueOf(
             getProperties().getProperty(WRITE_CONSISTENCY_LEVEL_PROPERTY,
                 WRITE_CONSISTENCY_LEVEL_PROPERTY_DEFAULT));
-
+        this.batchSize = Integer.parseInt(getProperties().getProperty(BATCH_SIZE, BATCH_SIZE_DEFAULT));
+        this.batchUpdates = Boolean.parseBoolean(getProperties().getProperty(BATCH_UPDATES, BATCH_UPDATES_DEFAULT));
+        logger.info("Batch update:" + batchUpdates + " BatchSize:" + batchSize);
         Boolean useSSL = Boolean.parseBoolean(getProperties().getProperty(USE_SSL_CONNECTION,
             DEFAULT_USE_SSL_CONNECTION));
 
@@ -251,6 +251,13 @@ public class CassandraCQLClient extends DB {
   public void cleanup() throws DBException {
     synchronized (INIT_COUNT) {
       final int curInitCount = INIT_COUNT.decrementAndGet();
+      if (batchUpdates && batchSize > 0) {
+        if (session != null && !session.isClosed() &&
+            batch != null && numRowsInBatch % batchSize != 0) {
+          session.execute(batch);
+          batch = null;
+        }
+      }
       if (curInitCount <= 0) {
         readStmts.clear();
         scanStmts.clear();
@@ -588,10 +595,18 @@ public class CassandraCQLClient extends DB {
       for (int i = 1; i < vars.size(); i++) {
         boundStmt.setString(i, values.get(vars.getName(i)).toString());
       }
-
-      session.execute(boundStmt);
-
-      return Status.OK;
+      if (batchUpdates && batchSize > 0) {
+        batch.add(boundStmt);
+        if (++numRowsInBatch % batchSize == 0) {
+          session.execute(batch);
+          batch = new BatchStatement();
+          return Status.OK;
+        }
+        return Status.BATCHED_OK;
+      } else {
+        session.execute(boundStmt);
+        return Status.OK;
+      }
     } catch (Exception e) {
       logger.error(MessageFormatter.format("Error inserting key: {}", key).getMessage(), e);
     }
