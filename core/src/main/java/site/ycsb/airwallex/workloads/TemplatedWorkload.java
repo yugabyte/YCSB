@@ -42,12 +42,12 @@ public class TemplatedWorkload extends CoreWorkload {
 
   @Override
   protected String buildKeyName(long keynum) {
-    return "(" + UUID.randomUUID() + ")" + "::uuid";
+    return UUID.randomUUID().toString();
   }
   @Override
   protected HashMap<String, ByteIterator> buildValues(String key) {
     HashMap<String, ByteIterator> values = new HashMap<>();
-    values.put(FIELD_NAME_DATA, new StringByteIterator(templateData.get(FIELD_NAME_DATA) + "::JSONB"));
+    values.put(FIELD_NAME_DATA, new StringByteIterator(templateData.get(FIELD_NAME_DATA)));
     return values;
   }
 }

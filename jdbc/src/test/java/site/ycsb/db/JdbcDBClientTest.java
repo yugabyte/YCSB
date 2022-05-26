@@ -66,6 +66,7 @@ public class JdbcDBClientTest {
 
         jdbcDBClient.setProperties(p);
         jdbcDBClient.init();
+        jdbcDBClient.setAirwallexAccount(false);
       } catch (SQLException e) {
         e.printStackTrace();
         fail("Could not create local Database");

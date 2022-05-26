@@ -16,6 +16,7 @@
  */
 package site.ycsb.db;
 
+import org.postgresql.util.PGobject;
 import site.ycsb.DB;
 import site.ycsb.DBException;
 import site.ycsb.ByteIterator;
@@ -97,6 +98,8 @@ public class JdbcDBClient extends DB {
   private static final String DEFAULT_PROP = "";
   private ConcurrentMap<StatementType, PreparedStatement> cachedStatements;
   private long numRowsInBatch = 0;
+
+  private boolean isAirwallexAccount = true;
   /** DB flavor defines DB-specific syntax and behavior for the
    * particular database. Current database flavors are: {default, phoenix} */
   private DBFlavor dbFlavor;
@@ -278,6 +281,10 @@ public class JdbcDBClient extends DB {
     }
   }
 
+  public void setAirwallexAccount(boolean airwallexAccount) {
+    this.isAirwallexAccount = airwallexAccount;
+  }
+
   private PreparedStatement createAndCacheInsertStatement(StatementType insertType, String key)
       throws SQLException {
     String insert = dbFlavor.createInsertStatement(insertType, key);
@@ -439,11 +446,26 @@ public class JdbcDBClient extends DB {
       if (insertStatement == null) {
         insertStatement = createAndCacheInsertStatement(type, key);
       }
-      insertStatement.setObject(1, key);
-      int index = 2;
-      for (String value: fieldInfo.getFieldValues()) {
-        insertStatement.setObject(index++, value);
+
+      if (isAirwallexAccount) {
+        System.out.println("key is: " + key);
+        insertStatement.setObject(1, UUID.fromString(key));
+      } else {
+        insertStatement.setString(1, key);
       }
+
+      if (isAirwallexAccount) {
+        PGobject jsonObject = new PGobject();
+        jsonObject.setType("jsonb");
+        jsonObject.setValue(fieldInfo.getFieldValues().get(0));
+        insertStatement.setObject(2, jsonObject);
+      } else {
+        int index = 2;
+        for (String value: fieldInfo.getFieldValues()) {
+          insertStatement.setString(index++, value);
+        }
+      }
+
       // Using the batch insert API
       if (batchUpdates) {
         insertStatement.addBatch();

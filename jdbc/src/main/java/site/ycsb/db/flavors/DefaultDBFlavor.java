@@ -40,6 +40,7 @@ public class DefaultDBFlavor extends DBFlavor {
       insert.append(",?");
     }
     insert.append(")");
+    System.out.println(insert);
     return insert.toString();
   }
 
