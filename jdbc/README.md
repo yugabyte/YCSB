@@ -45,7 +45,7 @@ CREATE TABLE usertable (
 
 Key take aways:
 
-* The primary key field needs to be named YCSB_KEY
+* The primary key field needs to be named 'id'
 * The other fields need to be prefixed with FIELD and count up starting from 1
 * Add the same number of FIELDs as you specify in the YCSB core properties, default is 10.
 * The type of the fields is not so important as long as they can accept strings of the length that you specify in the YCSB core properties, default is 100.

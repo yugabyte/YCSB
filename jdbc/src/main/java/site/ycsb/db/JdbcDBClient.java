@@ -77,7 +77,7 @@ public class JdbcDBClient extends DB {
   public static final String NULL_VALUE = "NULL";
 
   /** The primary key in the user table. */
-  public static final String PRIMARY_KEY = "YCSB_KEY";
+  public static final String PRIMARY_KEY = "id";
 
   /** The field name prefix in the table. */
   public static final String COLUMN_PREFIX = "FIELD";
@@ -439,10 +439,10 @@ public class JdbcDBClient extends DB {
       if (insertStatement == null) {
         insertStatement = createAndCacheInsertStatement(type, key);
       }
-      insertStatement.setString(1, key);
+      insertStatement.setObject(1, key);
       int index = 2;
       for (String value: fieldInfo.getFieldValues()) {
-        insertStatement.setString(index++, value);
+        insertStatement.setObject(index++, value);
       }
       // Using the batch insert API
       if (batchUpdates) {

@@ -40,7 +40,7 @@ public class JdbcDBClientTest {
     private static final int FIELD_LENGTH = 32;
     private static final String FIELD_PREFIX = "FIELD";
     private static final String KEY_PREFIX = "user";
-    private static final String KEY_FIELD = "YCSB_KEY";
+    private static final String KEY_FIELD = "id";
     private static final int NUM_FIELDS = 3;
 
     private static Connection jdbcConnection = null;

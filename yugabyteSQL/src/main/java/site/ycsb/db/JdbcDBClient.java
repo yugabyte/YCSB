@@ -77,7 +77,7 @@ public class JdbcDBClient extends DB {
   public static final String NULL_VALUE = "NULL";
 
   /** The primary key in the user table. */
-  public static final String PRIMARY_KEY = "YCSB_KEY";
+  public static final String PRIMARY_KEY = "id";
 
   /** The field name prefix in the table. */
   public static final String COLUMN_PREFIX = "FIELD";
