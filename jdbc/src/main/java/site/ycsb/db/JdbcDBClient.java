@@ -448,7 +448,6 @@ public class JdbcDBClient extends DB {
       }
 
       if (isAirwallexAccount) {
-        System.out.println("key is: " + key);
         insertStatement.setObject(1, UUID.fromString(key));
       } else {
         insertStatement.setString(1, key);

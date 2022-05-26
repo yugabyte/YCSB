@@ -29,11 +29,9 @@ public class TemplatedWorkload extends CoreWorkload {
     super.init(p);
     table = TABLENAME_PROPERTY_DEFAULT;
     try {
-      System.out.println("tiff=========================================");
       ClassLoader classloader = Thread.currentThread().getContextClassLoader();
       InputStream is = classloader.getResourceAsStream(DATA_TEMPLATE_NAME_DEFAULT);
       String result = IOUtils.toString(is, StandardCharsets.UTF_8.toString());
-      System.out.println(result);
       templateData = new ObjectMapper().readValue(result, HashMap.class);
     } catch (IOException e) {
       e.printStackTrace();
