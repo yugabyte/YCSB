@@ -62,6 +62,9 @@ public class JdbcDBClient extends DB {
   /** The JDBC fetch size hinted to the driver. */
   public static final String JDBC_FETCH_SIZE = "jdbc.fetchsize";
 
+  /** The number of rows that have the same first column in the composite key. */
+  public static final String DB_KEY_SPLIT_SIZE= "db.keysplitsize";
+
   /** The JDBC connection auto-commit property for the driver. */
   public static final String JDBC_AUTO_COMMIT = "jdbc.autocommit";
 
@@ -77,7 +80,8 @@ public class JdbcDBClient extends DB {
   public static final String NULL_VALUE = "NULL";
 
   /** The primary key in the user table. */
-  public static final String PRIMARY_KEY = "YCSB_KEY";
+  public static final String PRIMARY_KEY1 = "YCSB_KEY1";
+  public static final String PRIMARY_KEY2 = "YCSB_KEY2";
 
   /** The field name prefix in the table. */
   public static final String COLUMN_PREFIX = "FIELD";
@@ -92,6 +96,7 @@ public class JdbcDBClient extends DB {
   private Properties props;
   private int jdbcFetchSize;
   private int batchSize;
+  private int keySplitSize = 1000;
   private boolean autoCommit;
   private boolean batchUpdates;
   private static final String DEFAULT_PROP = "";
@@ -190,6 +195,7 @@ public class JdbcDBClient extends DB {
 
     this.jdbcFetchSize = getIntProperty(props, JDBC_FETCH_SIZE);
     this.batchSize = getIntProperty(props, DB_BATCH_SIZE);
+    this.keySplitSize = getIntProperty(props, DB_KEY_SPLIT_SIZE);
 
     this.autoCommit = getBoolProperty(props, JDBC_AUTO_COMMIT, true);
     this.batchUpdates = getBoolProperty(props, JDBC_BATCH_UPDATES, false);
@@ -336,6 +342,16 @@ public class JdbcDBClient extends DB {
     return stmt;
   }
 
+  private String getKey1(long key) {
+    key = key / keySplitSize;
+    return "user" + Long.toString(key);
+  }
+
+  private String getKey2(long key) {
+    key = key % keySplitSize;
+    return Long.toString(key);
+  }
+
   @Override
   public Status read(String tableName, String key, Set<String> fields, Map<String, ByteIterator> result) {
     try {
@@ -344,7 +360,11 @@ public class JdbcDBClient extends DB {
       if (readStatement == null) {
         readStatement = createAndCacheReadStatement(type, key);
       }
-      readStatement.setString(1, key);
+
+      long keyInt = Long.parseLong(key.substring(4));
+      readStatement.setString(1, getKey1(keyInt));
+      readStatement.setString(2, getKey2(keyInt));
+
       ResultSet resultSet = readStatement.executeQuery();
       if (!resultSet.next()) {
         resultSet.close();
@@ -374,13 +394,18 @@ public class JdbcDBClient extends DB {
         scanStatement = createAndCacheScanStatement(type, startKey);
       }
       // SQL Server TOP syntax is at first
+      long keyInt = Long.parseLong(startKey.substring(4));
+      keyInt = keyInt - keyInt % keySplitSize;
+
       if (sqlserverScans) {
         scanStatement.setInt(1, recordcount);
-        scanStatement.setString(2, startKey);
+        scanStatement.setString(2, getKey1(keyInt));
+        scanStatement.setString(3, getKey2(keyInt));
       // FETCH FIRST and LIMIT are at the end
       } else {
-        scanStatement.setString(1, startKey);
-        scanStatement.setInt(2, recordcount);
+        scanStatement.setString(1, getKey1(keyInt));
+        scanStatement.setString(2, getKey2(keyInt));
+        scanStatement.setInt(3, recordcount);
       }
       ResultSet resultSet = scanStatement.executeQuery();
       for (int i = 0; i < recordcount && resultSet.next(); i++) {
@@ -416,7 +441,11 @@ public class JdbcDBClient extends DB {
       for (String value: fieldInfo.getFieldValues()) {
         updateStatement.setString(index++, value);
       }
-      updateStatement.setString(index, key);
+
+      long keyInt = Long.parseLong(key.substring(4));
+      updateStatement.setString(index++, getKey1(keyInt));
+      updateStatement.setString(index++, getKey2(keyInt));
+
       int result = updateStatement.executeUpdate();
       if (result == 1) {
         return Status.OK;
@@ -439,8 +468,11 @@ public class JdbcDBClient extends DB {
       if (insertStatement == null) {
         insertStatement = createAndCacheInsertStatement(type, key);
       }
-      insertStatement.setString(1, key);
-      int index = 2;
+
+      long keyInt = Long.parseLong(key.substring(4));
+      insertStatement.setString(1, getKey1(keyInt));
+      insertStatement.setString(2, getKey2(keyInt));
+      int index = 3;
       for (String value: fieldInfo.getFieldValues()) {
         insertStatement.setString(index++, value);
       }
@@ -504,7 +536,11 @@ public class JdbcDBClient extends DB {
       if (deleteStatement == null) {
         deleteStatement = createAndCacheDeleteStatement(type, key);
       }
-      deleteStatement.setString(1, key);
+
+      long keyInt = Long.parseLong(key.substring(4));
+      deleteStatement.setString(1, getKey1(keyInt));
+      deleteStatement.setString(2, getKey2(keyInt));
+
       int result = deleteStatement.executeUpdate();
       if (result == 1) {
         return Status.OK;
