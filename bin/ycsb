@@ -123,12 +123,12 @@ def usage():
     print(u"\nCommands:", file=output)
     for command in sorted(COMMANDS.keys()):
         print(u"    %s %s" % (command.ljust(14),
-                              COMMANDS[command]["description"]), file=output)
+                                        COMMANDS[command]["description"]), file=output)
 
     print(u"\nDatabases:", file=output)
     for db in sorted(DATABASES.keys()):
         print(u"    %s %s" % (db.ljust(14), BASE_URL +
-                              db.split("-")[0]), file=output)
+                                        db.split("-")[0]), file=output)
 
     print(u"\nOptions:", file=output)
     for option in sorted(OPTIONS.keys()):
@@ -211,7 +211,7 @@ def is_distribution():
 def get_classpath_from_maven(module):
     try:
         debug("Running 'mvn -pl site.ycsb:" + module + " -am package -DskipTests "
-                                                       "dependency:build-classpath -DincludeScope=compile -Dmdep.outputFilterFile=true'")
+              "dependency:build-classpath -DincludeScope=compile -Dmdep.outputFilterFile=true'")
         mvn_output = check_output(["mvn", "-pl", "site.ycsb:" + module,
                                    "-am", "package", "-DskipTests",
                                    "dependency:build-classpath",
@@ -224,16 +224,16 @@ def get_classpath_from_maven(module):
     except subprocess.CalledProcessError as err:
         error("Attempting to generate a classpath from Maven failed "
               "with return code '" + str(err.returncode) + "'. The output from "
-                                                           "Maven follows, try running "
-                                                           "'mvn -DskipTests package dependency:build=classpath' on your "
-                                                           "own and correct errors." + os.linesep + os.linesep + "mvn output:" + os.linesep
+              "Maven follows, try running "
+              "'mvn -DskipTests package dependency:build=classpath' on your "
+              "own and correct errors." + os.linesep + os.linesep + "mvn output:" + os.linesep
               + err.output)
         sys.exit(err.returncode)
 
 def main():
     p = argparse.ArgumentParser(
-        usage=usage(),
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+            usage=usage(),
+            formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('-cp', dest='classpath', help="""Additional classpath
                    entries, e.g.  '-cp /tmp/hbase-1.0.1.1/conf'. Will be
                    prepended to the YCSB classpath.""")
@@ -324,3 +324,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
