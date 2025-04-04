@@ -32,7 +32,7 @@ LICENSE file.
   <dependency>
        <groupId>com.yugabyte</groupId>
        <artifactId>jdbc-yugabytedb</artifactId>
-       <version>42.2.7-yb-3</version>
+       <version>42.7.3-yb-1</version>
     </dependency>
     <dependency>
       <groupId>site.ycsb</groupId>
